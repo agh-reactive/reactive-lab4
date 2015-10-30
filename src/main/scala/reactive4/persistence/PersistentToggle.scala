@@ -1,3 +1,4 @@
+
 package reactive4.persistence
 
 import akka.actor.Actor
@@ -50,6 +51,8 @@ class PersistentToggle extends PersistentActor {
 
     case "Done" =>
       sender ! "Done"
+      context.stop(self)
+
 
   }
   def receiveCommand = happy
@@ -80,7 +83,7 @@ class ToggleMain extends Actor {
 }
 
 
-object ToggleApp extends App {
+object PersistentToggleApp extends App {
   val system = ActorSystem("Reactive4")
   val mainActor = system.actorOf(Props[ToggleMain], "mainActor")
 
