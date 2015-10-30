@@ -11,3 +11,4 @@ libraryDependencies ++= Seq(
   "org.fusesource.leveldbjni" % "leveldbjni-all" % "1.8"
 )
 
+EclipseKeys.createSrc := EclipseCreateSrc.Default + EclipseCreateSrc.Resource
