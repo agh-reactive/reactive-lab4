@@ -87,7 +87,5 @@ object PersistentToggleApp extends App {
   val system = ActorSystem("Reactive4")
   val mainActor = system.actorOf(Props[ToggleMain], "mainActor")
 
-  mainActor ! "Init"
-
   Await.result(system.whenTerminated, Duration.Inf)
 }
