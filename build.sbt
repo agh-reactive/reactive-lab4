@@ -1,14 +1,17 @@
-name := "reactive-lab4"
 
-scalaVersion := "2.11.7" 
+name := """reactive-lab4"""
 
-fork := true
+version := "1.1"
+
+scalaVersion := "2.11.8"
 
 libraryDependencies ++= Seq(
-  "com.typesafe.akka" %% "akka-actor" % "2.4.0",
-  "com.typesafe.akka" %% "akka-persistence" % "2.4.0",
-  "org.iq80.leveldb" % "leveldb" % "0.7",
-  "org.fusesource.leveldbjni" % "leveldbjni-all" % "1.8"
+  "com.typesafe.akka" %% "akka-actor" % "2.4.11",
+  "com.typesafe.akka" %% "akka-persistence" % "2.4.11",
+  "org.iq80.leveldb"            % "leveldb"          % "0.7",
+  "org.fusesource.leveldbjni"   % "leveldbjni-all"   % "1.8" 
 )
+  
 
 EclipseKeys.createSrc := EclipseCreateSrc.Default + EclipseCreateSrc.Resource
+
