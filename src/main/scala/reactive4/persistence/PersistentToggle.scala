@@ -1,4 +1,3 @@
-
 package reactive4.persistence
 
 import akka.actor.Actor
