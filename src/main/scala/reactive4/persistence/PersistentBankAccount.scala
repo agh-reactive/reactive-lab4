@@ -50,21 +50,23 @@ class PersistentBankAccount extends PersistentActor {
   val receiveCommand = LoggingReceive {
     case Deposit(amount) =>
       persist(BalanceChangeEvent(amount)) {
-        // event handler 
-        event => updateState(event)
+        // event handler
+        event =>
+          updateState(event)
       }
     case Withdraw(amount) if amount <= state.balance =>
       persist(BalanceChangeEvent(-amount)) {
-        // event handler 
-        event => updateState(event)
+        // event handler
+        event =>
+          updateState(event)
       }
-    case Snap => saveSnapshot(state)
+    case Snap  => saveSnapshot(state)
     case Print => println(s"Current balance: $state")
-    case Done =>   context.system.terminate()
+    case Done  => context.system.terminate()
   }
 
   val receiveRecover: Receive = {
-    case evt: BalanceChangeEvent => updateState(evt)
+    case evt: BalanceChangeEvent                  => updateState(evt)
     case SnapshotOffer(_, snapshot: AccountState) => state = snapshot
   }
 
@@ -87,7 +89,7 @@ object PersistentBankAccountMain extends App {
   example ! Print
 
   example ! Done
-  
+
   Await.result(system.whenTerminated, Duration.Inf)
 
 }
