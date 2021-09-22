@@ -1,74 +1,64 @@
 package reactive4.persistence
 
-import akka.actor._
-import akka.persistence._
-import akka.event.LoggingReceive
-import scala.math.BigInt.int2bigInt
+import akka.actor.typed.{ActorSystem, Behavior}
+import akka.persistence.typed.PersistenceId
+import akka.persistence.typed.scaladsl.{Effect, EventSourcedBehavior, RetentionCriteria}
+
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
 
-////////////////////////////////////////
-// Persistence example: Bank account //
-////////////////////////////////////////
-
 object PersistentBankAccount {
-  case class Deposit(amount: BigInt) {
+  trait Command
+  case class Deposit(amount: BigInt) extends Command {
     require(amount > 0)
   }
-  case class Withdraw(amount: BigInt) {
+  case class Withdraw(amount: BigInt) extends Command {
     require(amount > 0)
   }
-  case object Snap
-  case object Print
-  case object Done
+  case object Print extends Command
+  case object Done  extends Command
 
-}
+  trait Event
+  case class BalanceChanged(delta: BigInt) extends Event
 
-case class BalanceChangeEvent(delta: BigInt)
+  case class AccountState(balance: BigInt = 0) {
 
-case class AccountState(balance: BigInt = 0) {
+    def updated(evt: BalanceChanged): AccountState = {
+      println(s"Applying $evt")
+      AccountState(balance + evt.delta)
+    }
 
-  def updated(evt: BalanceChangeEvent): AccountState = {
-    println(s"Applying $evt")
-    AccountState(balance + evt.delta)
+    override def toString: String = balance.toString
   }
 
-  override def toString: String = balance.toString
-}
-
-class PersistentBankAccount extends PersistentActor {
-
-  import PersistentBankAccount._
-
-  override def persistenceId = "persistent account-id-2"
-
-  var state = AccountState()
-
-  def updateState(event: BalanceChangeEvent): Unit =
-    state = state.updated(event)
-
-  val receiveCommand = LoggingReceive {
-    case Deposit(amount) =>
-      persist(BalanceChangeEvent(amount)) {
-        // event handler
-        event =>
-          updateState(event)
-      }
-    case Withdraw(amount) if amount <= state.balance =>
-      persist(BalanceChangeEvent(-amount)) {
-        // event handler
-        event =>
-          updateState(event)
-      }
-    case Snap  => saveSnapshot(state)
-    case Print => println(s"Current balance: $state")
-    case Done  => context.system.terminate()
+  val commandHandler: (AccountState, Command) => Effect[Event, AccountState] = { (state, command) =>
+    command match {
+      case Deposit(amount) =>
+        Effect.persist(BalanceChanged(amount))
+      case Withdraw(amount) if amount <= state.balance =>
+        Effect.persist(BalanceChanged(-amount))
+      case Print =>
+        println(s"Current balance: $state")
+        Effect.none
+      case Done =>
+        Effect.stop()
+    }
   }
 
-  val receiveRecover: Receive = {
-    case evt: BalanceChangeEvent                  => updateState(evt)
-    case SnapshotOffer(_, snapshot: AccountState) => state = snapshot
+  val eventHandler: (AccountState, Event) => AccountState = { (state, event) =>
+    event match {
+      case evt: BalanceChanged => state.updated(evt)
+    }
   }
+
+  def apply(persistenceId: PersistenceId): Behavior[Command] =
+    EventSourcedBehavior[Command, Event, AccountState](
+      persistenceId = persistenceId,
+      emptyState = AccountState(),
+      commandHandler = commandHandler,
+      eventHandler = eventHandler
+    )
+//     .withRetention(RetentionCriteria.snapshotEvery(numberOfEvents = 6, keepNSnapshots = 2)) // please uncomment and try!
 
 }
 
@@ -76,20 +66,18 @@ object PersistentBankAccountMain extends App {
 
   import PersistentBankAccount._
 
-  val system = ActorSystem("example")
+  val system: ActorSystem[PersistentBankAccount.Command] =
+    ActorSystem(PersistentBankAccount(PersistenceId.ofUniqueId("account")), "account")
 
-  val example = system.actorOf(Props[PersistentBankAccount], "account")
+  system ! Deposit(1)
+  system ! Deposit(2)
 
-  example ! Deposit(1)
-  example ! Deposit(2)
-  //example ! Snap // please uncomment and try!
-  example ! Deposit(3)
-  example ! Withdraw(3)
+  system ! Deposit(3)
+  system ! Withdraw(3)
 
-  example ! Print
+  system ! Print
 
-  example ! Done
+  system ! Done
 
   Await.result(system.whenTerminated, Duration.Inf)
-
 }
