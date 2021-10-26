@@ -16,7 +16,7 @@ The template for Lab 3: https://github.com/agh-reactive/reactive-scala-labs-temp
 * **be sure that your local lab-4 branch is up to date with remote one**
 * **remember about merging solution from lab-3 into this branch**
 
-1. (15 points) Basket persistence. Implement basket persistence using the event sourcing pattern. Ensure correct timer recovery.
+1. (15 points) Cart persistence. Implement cart persistence using the event sourcing pattern. Ensure correct timer recovery.
 2. (15 points) Implement state persistence for `PersistentCheckout` and test the scenario where during the checkout operation, the app is stopped (e.g. via `system.terminate`). After the restart, the state should be correctly restored (together with timers).
 3. (10 points) Write additional tests for `PersistentCartActor` (in particular, take into account actor state recovery).
 
